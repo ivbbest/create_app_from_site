@@ -26,6 +26,9 @@ app_from_site = {
 
 
 def add_userfield(userfields):
+    """
+    Создание пользовательских тегов по списку
+    """
     for userfield in userfields:
         if str(userfield).find('date') != -1:
             new_userfield = [
@@ -57,6 +60,9 @@ def add_userfield(userfields):
 
 
 def search_client_id(phone):
+    """
+    Поиск клиента по телефону и на выходе id
+    """
     contact_id = -1
     client_phone = [
         {
@@ -74,6 +80,10 @@ def search_client_id(phone):
 
 
 def search_client(app_from_site):
+    """
+    Поиск клиента по базе. Если нет его, то добавляем.
+    На выходе отправляется id клиента
+    """
     phone = app_from_site['client']['phone']
     client_id = search_client_id(phone)
 
@@ -84,6 +94,9 @@ def search_client(app_from_site):
 
 
 def add_new_client(client_info):
+    """
+    Добавляем нового клиента
+    """
     new_client = [
         {
             'fields': {
@@ -101,6 +114,64 @@ def add_new_client(client_info):
 
     return contact_id
 
+
+def analyze_delivery_code(app_from_site):
+    """
+    Анализ delivery_code. Если такой существует, то вывод deal_id.
+    В противном случае deal_id = -1
+    """
+    delivery_code = app_from_site['delivery_code']
+    deal_id = -1
+    filter_delivery_code = prefix + 'delivery_code'
+
+    userfilter = [
+        {
+            'filter': {filter_delivery_code: delivery_code},
+            'select': ['ID']
+        },
+    ]
+
+    delivery_code_info = b.call('crm.deal.list', userfilter)
+
+    if len(delivery_code_info[0]):
+        deal_id = delivery_code_info[0][0]['ID']
+
+    return deal_id
+
+
+def create_new_deal(app_from_site):
+    contact_id = search_client(app_from_site)
+    filter_delivery_code = prefix + 'delivery_code'
+    filter_delivery_date = prefix + 'delivery_date'
+    filter_delivery_adress = prefix + 'delivery_adre'
+
+    sdelka = [
+        {
+            'fields': {
+                "TITLE": app_from_site['title'],
+                "SOURCE_DESCRIPTION": app_from_site['description'],
+                'CONTACT_ID': contact_id,
+                filter_delivery_code: app_from_site['delivery_code'],
+                filter_delivery_date: app_from_site['delivery_date'],
+                filter_delivery_adress: app_from_site['delivery_adress']
+
+            }
+        }
+    ]
+
+    b.call('crm.deal.add', sdelka)
+
+
+def update_deal():
+    pass
+
+
+def add_product():
+    pass
+
+
+def main():
+    pass
 
 
 breakpoint()
@@ -142,12 +213,6 @@ print()
 #             "SOURCE_DESCRIPTION": "Some description6",
 #             'CONTACT_ID': 3,
 #             'UF_CRM_MY_STRING': "#232nkF3fAfdn"
-#             # 'client': {
-#             #     'NAME': 'Jon',
-#             #     'LAST_NAME': "Karter",
-#             #     'PHONE': "+7777777777",
-#             #     'ADDRESS': "st. Mira, 287, Moscow"
-#             # },
 #
 #         }
 #     }
