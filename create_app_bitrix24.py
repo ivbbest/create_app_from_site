@@ -8,23 +8,22 @@ webhook = WEBHOOK
 b = Bitrix(webhook)
 
 userfields = ['delivery_code', 'delivery_adress', 'delivery_date']
-# userfields = ['delivery_adress', 'delivery_code']
 
 prefix = 'UF_CRM_'
 
 app_from_site = {
-    "title": "Test title",
-    "description": "Test description",
+    "title": "Test title2",
+    "description": "Test description2",
     "client": {
-        "name": "Ivan",
-        "surname": "Samer",
-        "phone": "+77877775277",
-        "adress": "st. Lenina, 18, Piter"
+        "name": "Pasha",
+        "surname": "Makarov",
+        "phone": "+3333",
+        "adress": "st. Lenina, 1, Ivanovo"
     },
-    "products": ["Candy", "Carrot", "Potato"],
-    "delivery_adress": "st. Lenina, 211, Ekaterinburg",
+    "products": ["Vodka", "Pivo", "Vino"],
+    "delivery_adress": "st. Lenina, 211, Perm",
     "delivery_date": "2022-01-01:16:00",
-    "delivery_code": "3264557hjhff"
+    "delivery_code": "22864557hjhff"
 }
 
 
@@ -34,27 +33,14 @@ def add_userfield(userfields):
     """
     try:
         for userfield in userfields:
-            # if str(userfield).find('date') != -1:
-            #     new_userfield = [
-            #         {
-            #             'fields': {
-            #                 "FIELD_NAME": userfield,
-            #                 "EDIT_FORM_LABEL": userfield.capitalize(),
-            #                 "LIST_COLUMN_LABEL": userfield.capitalize(),
-            #                 "USER_TYPE_ID": "datetime"
-            #
-            #             }
-            #         }
-            #     ]
-            #     print(b.call('crm.deal.userfield.add', new_userfield))
-            #
-            # else:
+            print(userfield)
+
             new_userfield = [
                     {
                         'fields': {
                             "FIELD_NAME": userfield,
-                            "EDIT_FORM_LABEL": userfield.capitalize(),
-                            "LIST_COLUMN_LABEL": userfield.capitalize(),
+                            "EDIT_FORM_LABEL": userfield,
+                            "LIST_COLUMN_LABEL": userfield,
                             "USER_TYPE_ID": "string"
 
                         }
@@ -81,10 +67,12 @@ def search_client_id(phone):
     ]
 
     client_id = b.call('crm.contact.list', client_phone)
+    print(client_id)
 
     if len(client_id[0]):
         contact_id = client_id[0][0]['ID']
 
+    print(contact_id)
     return int(contact_id)
 
 
@@ -95,6 +83,7 @@ def search_client(app_from_site):
     """
     phone = app_from_site['client']['phone']
     client_id = search_client_id(phone)
+    print(client_id)
 
     if client_id == -1:
         client_id = add_new_client(app_from_site['client'])
@@ -118,6 +107,7 @@ def add_new_client(client_info):
     ]
 
     contact_id = b.call('crm.contact.add', new_client)
+    print(contact_id)
 
     return int(contact_id[0])
 
