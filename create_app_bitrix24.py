@@ -6,7 +6,9 @@ from config import WEBHOOK  # конфигурационный файл с ве�
 webhook = WEBHOOK
 b = Bitrix(webhook)
 
-userfields = ['delivery_adress', 'delivery_date', 'delivery_code']
+# userfields = ['delivery_adress', 'delivery_date', 'delivery_code']
+userfields = ['delivery_adress', 'delivery_code']
+
 prefix = 'UF_CRM_'
 
 app_from_site = {
@@ -29,34 +31,39 @@ def add_userfield(userfields):
     """
     Создание пользовательских тегов по списку
     """
-    for userfield in userfields:
-        if str(userfield).find('date') != -1:
+    try:
+        for userfield in userfields:
+            # if str(userfield).find('date') != -1:
+            #     new_userfield = [
+            #         {
+            #             'fields': {
+            #                 "FIELD_NAME": userfield,
+            #                 "EDIT_FORM_LABEL": userfield.capitalize(),
+            #                 "LIST_COLUMN_LABEL": userfield.capitalize(),
+            #                 "USER_TYPE_ID": "datetime"
+            #
+            #             }
+            #         }
+            #     ]
+            #     print(b.call('crm.deal.userfield.add', new_userfield))
+
             new_userfield = [
                 {
                     'fields': {
                         "FIELD_NAME": userfield,
-                        "EDIT_FORM_LABEL": userfield,
-                        "LIST_COLUMN_LABEL": userfield,
-                        "USER_TYPE_ID": "datetime"
+                        "EDIT_FORM_LABEL": userfield.capitalize(),
+                        "LIST_COLUMN_LABEL": userfield.capitalize(),
+                        "USER_TYPE_ID": "string"
 
                     }
                 }
             ]
-            # print(b.call('crm.deal.userfield.add', new_userfield))
 
-        new_userfield = [
-            {
-                'fields': {
-                    "FIELD_NAME": userfield,
-                    "EDIT_FORM_LABEL": userfield,
-                    "LIST_COLUMN_LABEL": userfield,
-                    "USER_TYPE_ID": "string"
+            print(b.call('crm.deal.userfield.add', new_userfield))
 
-                }
-            }
-        ]
+    except Exception as e:
+        print(e)
 
-        # print(b.call('crm.deal.userfield.add', new_userfield))
 
 
 def search_client_id(phone):
@@ -76,7 +83,7 @@ def search_client_id(phone):
     if len(client_id[0]):
         contact_id = client_id[0][0]['ID']
 
-    return contact_id
+    return int(contact_id)
 
 
 def search_client(app_from_site):
@@ -90,7 +97,7 @@ def search_client(app_from_site):
     if client_id == -1:
         client_id = add_new_client(app_from_site['client'])
 
-    return client_id
+    return int(client_id)
 
 
 def add_new_client(client_info):
@@ -108,11 +115,9 @@ def add_new_client(client_info):
         }
     ]
 
-    b.call('crm.contact.add', new_client)
+    contact_id = b.call('crm.contact.add', new_client)
 
-    contact_id = search_client_id(client_info['phone'])
-
-    return contact_id
+    return int(contact_id[0])
 
 
 def analyze_delivery_code(app_from_site):
@@ -132,9 +137,10 @@ def analyze_delivery_code(app_from_site):
     ]
 
     delivery_code_info = b.call('crm.deal.list', userfilter)
+    breakpoint()
 
     if len(delivery_code_info[0]):
-        deal_id = delivery_code_info[0][0]['ID']
+        deal_id = int(delivery_code_info[0][0]['ID'])
 
     return deal_id
 
@@ -159,7 +165,12 @@ def create_new_deal(app_from_site):
         }
     ]
 
-    b.call('crm.deal.add', sdelka)
+    deal_id = b.call('crm.deal.add', sdelka)
+    print(deal_id)
+
+    add_product(app_from_site, deal_id[0])
+
+    return int(deal_id[0])
 
 
 def update_deal(app_from_site, deal_id):
@@ -200,10 +211,18 @@ def add_product(app_from_site, deal_id):
 
 
 def main():
-    pass
+    # for i in range(223, 245, 2):
+    #     try:
+    #         print(b.call('crm.deal.userfield.delete', {'ID': i}))
+    #     except Exception as e:
+    #         print(e)
+    # add_userfield(userfields)
+    # analyze_delivery_code(app_from_site)
+    deals = b.get_all('crm.deal.userfield.list')
+    print(deals)
 
-
-
+if __name__ == '__main__':
+    main()
 
 ###############################################################
 ###############################################################
@@ -237,16 +256,17 @@ def main():
 # sdelka = [
 #     {
 #         'fields': {
-#             "TITLE": "title6",
-#             "SOURCE_DESCRIPTION": "Some description6",
+#             "TITLE": "title28",
+#             "SOURCE_DESCRIPTION": "Some description28",
 #             'CONTACT_ID': 3,
-#             'UF_CRM_MY_STRING': "#232nkF3fAfdn"
+#             'UF_CRM_MY_STRING': "#652nkF6fAfdn"
 #
 #         }
 #     }
 # ]
-#
-# b.call('crm.deal.add', sdelka)
+# #
+# result = b.call('crm.deal.add', sdelka)
+# breakpoint()
 #
 # # print(b.call('crm.deal.contact.fields', {}))
 #
@@ -292,21 +312,21 @@ def main():
 # # print(b.call('crm.deal.list', userfilter))
 # print(b.call('crm.productrow.fields', {}))
 
-products = app_from_site['products']
-rows = []
+# products = app_from_site['products']
+# rows = []
+#
+# for product in products:
+#     rows.append({"PRODUCT_NAME": product})
 
-for product in products:
-    rows.append({"PRODUCT_NAME": product})
 
-
-product_name = [
-    {
-        'ID': 11,
-        'rows': rows,
-    }
-
-]
-print(b.call('crm.deal.productrows.set', product_name))
+# product_name = [
+#     {
+#         'ID': 11,
+#         'rows': rows,
+#     }
+#
+# ]
+# print(b.call('crm.deal.productrows.set', product_name))
 
 #
 #
@@ -322,26 +342,28 @@ print(b.call('crm.deal.productrows.set', product_name))
 # # print(b.call('crm.userfield.fields', {}))
 #
 #
-# new_user = [
-#     {
+# new_user = {
 #         'fields': {
-#             "NAME": "Иван",
-#             "SECOND_NAME": "Иванович",
-#             "LAST_NAME": "Иванов",
-#             "PHONE": [{"VALUE": "+7777777777"}]
+#             "NAME": "Masha",
+#             "SECOND_NAME": "Masha",
+#             "LAST_NAME": "Masha",
+#             "PHONE": [{"VALUE": "+4444"}]
 #         }
 #     }
-# ]
-# # b.call('crm.contact.add', new_user)
+#
+# result = b.call('crm.contact.add', new_user)
+# breakpoint()
+
+
+
 #
 #
 # user_phone = [
 #     {
-#         'filter': {'PHONE': "+777п7777777"},
+#         'filter': {'PHONE': "+4444"},
 #         'select': ['ID']
 #     },
 # ]
-
+#
 # user_id = b.call('crm.contact.list', user_phone)
 # breakpoint()
-# print()
