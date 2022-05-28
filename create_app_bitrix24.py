@@ -42,7 +42,7 @@ def add_userfield(userfields):
                     }
                 }
             ]
-            print(b.call('crm.deal.userfield.add', new_userfield))
+            # print(b.call('crm.deal.userfield.add', new_userfield))
 
         new_userfield = [
             {
@@ -56,7 +56,7 @@ def add_userfield(userfields):
             }
         ]
 
-        print(b.call('crm.deal.userfield.add', new_userfield))
+        # print(b.call('crm.deal.userfield.add', new_userfield))
 
 
 def search_client_id(phone):
@@ -162,20 +162,48 @@ def create_new_deal(app_from_site):
     b.call('crm.deal.add', sdelka)
 
 
-def update_deal():
-    pass
+def update_deal(app_from_site, deal_id):
+    filter_delivery_code = prefix + 'delivery_code'
+    filter_delivery_date = prefix + 'delivery_date'
+    filter_delivery_adress = prefix + 'delivery_adre'
+
+    sdelka = [
+        {
+            'ID': deal_id,
+            'fields': {
+                filter_delivery_code: app_from_site['delivery_code'],
+                filter_delivery_date: app_from_site['delivery_date'],
+                filter_delivery_adress: app_from_site['delivery_adress']
+
+            }
+        }
+    ]
+
+    b.call('crm.deal.update', sdelka)
 
 
-def add_product():
-    pass
+def add_product(app_from_site, deal_id):
+    products = app_from_site['products']
+    rows = list()
+
+    for product in products:
+        rows.append({"PRODUCT_NAME": product})
+
+    product_name = [
+        {
+            'ID': deal_id,
+            'rows': rows,
+        }
+
+    ]
+    print(b.call('crm.deal.productrows.set', product_name))
 
 
 def main():
     pass
 
 
-breakpoint()
-print()
+
 
 ###############################################################
 ###############################################################
@@ -262,7 +290,24 @@ print()
 #
 #
 # # print(b.call('crm.deal.list', userfilter))
-# # print(b.call('crm.productrow.fields', {}))
+# print(b.call('crm.productrow.fields', {}))
+
+products = app_from_site['products']
+rows = []
+
+for product in products:
+    rows.append({"PRODUCT_NAME": product})
+
+
+product_name = [
+    {
+        'ID': 11,
+        'rows': rows,
+    }
+
+]
+print(b.call('crm.deal.productrows.set', product_name))
+
 #
 #
 # product_name = [
