@@ -2,28 +2,29 @@ from fast_bitrix24 import Bitrix
 from datetime import datetime, timedelta
 import requests
 from config import WEBHOOK  # конфигурационный файл с вебхуком
+from pprint import pprint
 
 webhook = WEBHOOK
 b = Bitrix(webhook)
 
-# userfields = ['delivery_adress', 'delivery_date', 'delivery_code']
-userfields = ['delivery_adress', 'delivery_code']
+userfields = ['delivery_code', 'delivery_adress', 'delivery_date']
+# userfields = ['delivery_adress', 'delivery_code']
 
 prefix = 'UF_CRM_'
 
 app_from_site = {
-    "title": "title",
-    "description": "Some description",
+    "title": "Test title",
+    "description": "Test description",
     "client": {
-        "name": "Jon",
-        "surname": "Karter",
-        "phone": "+77777777777",
-        "adress": "st. Mira, 287, Moscow"
+        "name": "Ivan",
+        "surname": "Samer",
+        "phone": "+77877775277",
+        "adress": "st. Lenina, 18, Piter"
     },
     "products": ["Candy", "Carrot", "Potato"],
-    "delivery_adress": "st. Mira, 211, Ekaterinburg",
-    "delivery_date": "2021-01-01:16:00",
-    "delivery_code": "#232nkF3fAdn"
+    "delivery_adress": "st. Lenina, 211, Ekaterinburg",
+    "delivery_date": "2022-01-01:16:00",
+    "delivery_code": "3264557hjhff"
 }
 
 
@@ -46,24 +47,25 @@ def add_userfield(userfields):
             #         }
             #     ]
             #     print(b.call('crm.deal.userfield.add', new_userfield))
-
+            #
+            # else:
             new_userfield = [
-                {
-                    'fields': {
-                        "FIELD_NAME": userfield,
-                        "EDIT_FORM_LABEL": userfield.capitalize(),
-                        "LIST_COLUMN_LABEL": userfield.capitalize(),
-                        "USER_TYPE_ID": "string"
+                    {
+                        'fields': {
+                            "FIELD_NAME": userfield,
+                            "EDIT_FORM_LABEL": userfield.capitalize(),
+                            "LIST_COLUMN_LABEL": userfield.capitalize(),
+                            "USER_TYPE_ID": "string"
 
+                        }
                     }
-                }
-            ]
+                ]
 
             print(b.call('crm.deal.userfield.add', new_userfield))
-
-    except Exception as e:
-        print(e)
-
+    except RuntimeError as err:
+        print('Runtime Error')
+    except Exception as err:
+        print('Any Error')
 
 
 def search_client_id(phone):
@@ -120,14 +122,14 @@ def add_new_client(client_info):
     return int(contact_id[0])
 
 
-def analyze_delivery_code(app_from_site):
+def check_delivery_code(app_from_site):
     """
     Анализ delivery_code. Если такой существует, то вывод deal_id.
     В противном случае deal_id = -1
     """
     delivery_code = app_from_site['delivery_code']
     deal_id = -1
-    filter_delivery_code = prefix + 'delivery_code'
+    filter_delivery_code = prefix + 'DELIVERY_CODE'
 
     userfilter = [
         {
@@ -137,19 +139,20 @@ def analyze_delivery_code(app_from_site):
     ]
 
     delivery_code_info = b.call('crm.deal.list', userfilter)
-    breakpoint()
+    print(delivery_code_info)
 
     if len(delivery_code_info[0]):
         deal_id = int(delivery_code_info[0][0]['ID'])
-
+        print(deal_id)
     return deal_id
 
 
 def create_new_deal(app_from_site):
+
     contact_id = search_client(app_from_site)
-    filter_delivery_code = prefix + 'delivery_code'
-    filter_delivery_date = prefix + 'delivery_date'
-    filter_delivery_adress = prefix + 'delivery_adre'
+    filter_delivery_code = prefix + 'DELIVERY_CODE'
+    filter_delivery_date = prefix + 'DELIVERY_DATE'
+    filter_delivery_adress = prefix + 'DELIVERY_ADRESS'
 
     sdelka = [
         {
@@ -174,9 +177,9 @@ def create_new_deal(app_from_site):
 
 
 def update_deal(app_from_site, deal_id):
-    filter_delivery_code = prefix + 'delivery_code'
-    filter_delivery_date = prefix + 'delivery_date'
-    filter_delivery_adress = prefix + 'delivery_adre'
+    filter_delivery_code = prefix + 'DELIVERY_CODE'
+    filter_delivery_date = prefix + 'DELIVERY_DATE'
+    filter_delivery_adress = prefix + 'DELIVERY_ADRESS'
 
     sdelka = [
         {
@@ -211,15 +214,27 @@ def add_product(app_from_site, deal_id):
 
 
 def main():
-    # for i in range(223, 245, 2):
+
+    check_deal_id = check_delivery_code(app_from_site)
+
+    if check_deal_id != - 1:
+        update_deal(app_from_site, check_deal_id)
+    else:
+        create_new_deal(app_from_site)
+
+    # for i in range(273, 295, 2):
     #     try:
     #         print(b.call('crm.deal.userfield.delete', {'ID': i}))
     #     except Exception as e:
     #         print(e)
     # add_userfield(userfields)
-    # analyze_delivery_code(app_from_site)
-    deals = b.get_all('crm.deal.userfield.list')
-    print(deals)
+    # # # analyze_delivery_code(app_from_site)
+    # # pprint(b.call('crm.deal.userfield.get', {'ID': 291})['FIELD_NAME'])
+    # deals = b.call('crm.deal.list', {
+    #     'select': ['UF_*'],
+    #     'filter': {'CLOSED': 'N'}
+    # })[0]
+    # # pprint(deals)
 
 if __name__ == '__main__':
     main()
