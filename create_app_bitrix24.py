@@ -13,7 +13,8 @@ b = Bitrix(webhook)
 
 def add_userfield(userfields):
     """
-    Создание пользовательских тегов по списку
+    Создание пользовательских тегов по списку.
+    Если поля такие есть, то пропускается работа с перехватом ошибки.
     """
     try:
         for userfield in userfields:
@@ -33,9 +34,10 @@ def add_userfield(userfields):
 
             print(b.call('crm.deal.userfield.add', new_userfield))
     except RuntimeError as err:
-        print('Runtime Error')
+        print('Runtime Error', err)
+
     except Exception as err:
-        print('Any Error')
+        print('Any Error', err)
 
 
 def search_client_id(phone):
@@ -51,12 +53,12 @@ def search_client_id(phone):
     ]
 
     client_id = b.call('crm.contact.list', client_phone)
-    print(client_id)
+    print('Id client', client_id)
 
     if len(client_id[0]):
         contact_id = client_id[0][0]['ID']
 
-    print(contact_id)
+    print('Id client', contact_id)
     return int(contact_id)
 
 
@@ -67,7 +69,7 @@ def search_client(client_info):
     """
     phone = client_info['phone']
     client_id = search_client_id(phone)
-    print(client_id)
+    print('Id client', client_id)
 
     if client_id == -1:
         client_id = add_new_client(client_info)
@@ -91,7 +93,7 @@ def add_new_client(client_info):
     ]
 
     contact_id = b.call('crm.contact.add', new_client)
-    print(contact_id)
+    print('Id contact', contact_id)
 
     return int(contact_id[0])
 
@@ -101,9 +103,8 @@ def check_delivery_code(delivery_code):
     Анализ delivery_code. Если такой существует, то вывод deal_id.
     В противном случае deal_id = -1
     """
-    # delivery_code = app_from_site['delivery_code']
+
     deal_id = -1
-    # filter_delivery_code = prefix + 'DELIVERY_CODE'
 
     userfilter = [
         {
@@ -113,20 +114,19 @@ def check_delivery_code(delivery_code):
     ]
 
     delivery_code_info = b.call('crm.deal.list', userfilter)
-    print(delivery_code_info)
+    print('Данные по delivery code', delivery_code_info)
 
     if len(delivery_code_info[0]):
         deal_id = int(delivery_code_info[0][0]['ID'])
-        print(deal_id)
+        print('Id сделки', deal_id)
     return deal_id
 
 
 def create_new_deal(purchase):
-
+    """
+    Создание новой заявки на сайте
+    """
     contact_id = search_client(purchase['client'])
-    # filter_delivery_code = prefix + 'DELIVERY_CODE'
-    # filter_delivery_date = prefix + 'DELIVERY_DATE'
-    # filter_delivery_adress = prefix + 'DELIVERY_ADRESS'
 
     sdelka = [
         {
@@ -143,18 +143,19 @@ def create_new_deal(purchase):
     ]
 
     deal_id = b.call('crm.deal.add', sdelka)
-    print(deal_id)
+    print('Id сделки', deal_id)
 
-    add_product(app_from_site, deal_id[0])
+    add_product(purchase["products"], deal_id[0])
 
     return int(deal_id[0])
 
 
-def update_deal(delivery_code, delivery_date, delivery_adress, deal_id):
-    # filter_delivery_code = prefix + 'DELIVERY_CODE'
-    # filter_delivery_date = prefix + 'DELIVERY_DATE'
-    # filter_delivery_adress = prefix + 'DELIVERY_ADRESS'
-
+def update_deal(delivery, deal_id):
+    """
+    Обновление данных по сделке.
+    На вход: delivery_code, delivery_date, delivery_adress, которые можно изменять в заявке
+    """
+    delivery_code, delivery_date, delivery_adress = delivery
     sdelka = [
         {
             'ID': deal_id,
@@ -170,12 +171,11 @@ def update_deal(delivery_code, delivery_date, delivery_adress, deal_id):
     b.call('crm.deal.update', sdelka)
 
 
-def add_product(app_from_site, deal_id):
-    products = app_from_site['products']
-    rows = list()
-
-    for product in products:
-        rows.append({"PRODUCT_NAME": product})
+def add_product(products, deal_id):
+    """
+    Добавление товаров в заявку
+    """
+    rows = [{"PRODUCT_NAME": product} for product in products]
 
     product_name = [
         {
@@ -184,19 +184,34 @@ def add_product(app_from_site, deal_id):
         }
 
     ]
+
     print(b.call('crm.deal.productrows.set', product_name))
 
 
 def main(purchase):
-    check_deal_id = check_delivery_code(purchase['delivery_code'])
+    # добавление новых пользовательских полей
+    add_userfield(userfields)
 
-    if check_deal_id != - 1:
-        delivery_code = purchase['delivery_code']
-        delivery_date = purchase['delivery_date']
-        delivery_adress = purchase['delivery_adress']
-        update_deal(delivery_code, delivery_date, delivery_adress, check_deal_id)
-    else:
-        create_new_deal(purchase)
+    # Анализ delivery_code и в зависимости от check_deal_id
+    # Обновляем заявку или создаем с нуля
+    # Если в заявке не хватает каких-то аргументов, то перехват ошибки
+    try:
+        check_deal_id = check_delivery_code(purchase['delivery_code'])
+
+        if check_deal_id != - 1:
+            delivery = (
+                        purchase['delivery_code'],
+                        purchase['delivery_date'],
+                        purchase['delivery_adress']
+                        )
+            update_deal(delivery, check_deal_id)
+        else:
+            create_new_deal(purchase)
+    except (RuntimeError, KeyError) as err:
+        print('Неправильно введенный delivery_code или другой аргумент. '
+              'Проверьте корректность заявки.', err)
+    except Exception as err:
+        print('Any Error', err)
 
     # for i in range(273, 295, 2):
     #     try:
@@ -213,9 +228,9 @@ def main(purchase):
     # # pprint(deals)
 
 
-if __name__ == '__main__':
-    main(app_from_site)
-
+# if __name__ == '__main__':
+#     main(app_from_site)
+pprint(b.get_all('crm.deal.userfield.list'))
 ###############################################################
 ###############################################################
 
@@ -305,15 +320,15 @@ if __name__ == '__main__':
 # print(b.call('crm.productrow.fields', {}))
 
 # products = app_from_site['products']
-# rows = []
-#
+# rows = [{"PRODUCT_NAME": product} for product in products]
+
 # for product in products:
 #     rows.append({"PRODUCT_NAME": product})
 
 
 # product_name = [
 #     {
-#         'ID': 11,
+#         'ID': 21,
 #         'rows': rows,
 #     }
 #
