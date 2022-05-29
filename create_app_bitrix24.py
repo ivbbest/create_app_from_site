@@ -15,8 +15,6 @@ def add_userfield(custom_tags):
     """
     try:
         for userfield in custom_tags:
-            print(userfield)
-
             new_userfield = [
                     {
                         'fields': {
@@ -32,7 +30,6 @@ def add_userfield(custom_tags):
             print(b.call('crm.deal.userfield.add', new_userfield))
     except RuntimeError as err:
         print('Runtime Error', err)
-
     except Exception as err:
         print('Any Error', err)
 
@@ -55,7 +52,7 @@ def search_client_id(phone):
     if len(client_id[0]):
         contact_id = client_id[0][0]['ID']
 
-    print('Id client', contact_id)
+    print('Id contact', contact_id)
     return int(contact_id)
 
 
@@ -100,7 +97,6 @@ def check_delivery_code(delivery_code):
     Анализ delivery_code. Если такой существует, то вывод deal_id.
     В противном случае deal_id = -1
     """
-
     deal_id = -1
 
     userfilter = [
