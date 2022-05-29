@@ -182,6 +182,9 @@ def add_product(products, deal_id):
 
 
 def main(purchase):
+    """
+    Собираем весь функционал в одном месте
+    """
     # добавление новых пользовательских полей
     add_userfield(userfields)
 
