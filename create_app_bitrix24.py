@@ -3,28 +3,12 @@ from datetime import datetime, timedelta
 import requests
 from config import WEBHOOK  # конфигурационный файл с вебхуком
 from pprint import pprint
+from options import userfields, app_from_site, filter_delivery_date, \
+    filter_delivery_adress, filter_delivery_code
+
 
 webhook = WEBHOOK
 b = Bitrix(webhook)
-
-userfields = ['delivery_code', 'delivery_adress', 'delivery_date']
-
-prefix = 'UF_CRM_'
-
-app_from_site = {
-    "title": "Test title2",
-    "description": "Test description2",
-    "client": {
-        "name": "Pasha",
-        "surname": "Makarov",
-        "phone": "+3333",
-        "adress": "st. Lenina, 1, Ivanovo"
-    },
-    "products": ["Vodka", "Pivo", "Vino"],
-    "delivery_adress": "st. Lenina, 211, Perm",
-    "delivery_date": "2022-01-01:16:00",
-    "delivery_code": "22864557hjhff"
-}
 
 
 def add_userfield(userfields):
@@ -76,17 +60,17 @@ def search_client_id(phone):
     return int(contact_id)
 
 
-def search_client(app_from_site):
+def search_client(client_info):
     """
     Поиск клиента по базе. Если нет его, то добавляем.
     На выходе отправляется id клиента
     """
-    phone = app_from_site['client']['phone']
+    phone = client_info['phone']
     client_id = search_client_id(phone)
     print(client_id)
 
     if client_id == -1:
-        client_id = add_new_client(app_from_site['client'])
+        client_id = add_new_client(client_info)
 
     return int(client_id)
 
@@ -112,14 +96,14 @@ def add_new_client(client_info):
     return int(contact_id[0])
 
 
-def check_delivery_code(app_from_site):
+def check_delivery_code(delivery_code):
     """
     Анализ delivery_code. Если такой существует, то вывод deal_id.
     В противном случае deal_id = -1
     """
-    delivery_code = app_from_site['delivery_code']
+    # delivery_code = app_from_site['delivery_code']
     deal_id = -1
-    filter_delivery_code = prefix + 'DELIVERY_CODE'
+    # filter_delivery_code = prefix + 'DELIVERY_CODE'
 
     userfilter = [
         {
@@ -137,22 +121,22 @@ def check_delivery_code(app_from_site):
     return deal_id
 
 
-def create_new_deal(app_from_site):
+def create_new_deal(purchase):
 
-    contact_id = search_client(app_from_site)
-    filter_delivery_code = prefix + 'DELIVERY_CODE'
-    filter_delivery_date = prefix + 'DELIVERY_DATE'
-    filter_delivery_adress = prefix + 'DELIVERY_ADRESS'
+    contact_id = search_client(purchase['client'])
+    # filter_delivery_code = prefix + 'DELIVERY_CODE'
+    # filter_delivery_date = prefix + 'DELIVERY_DATE'
+    # filter_delivery_adress = prefix + 'DELIVERY_ADRESS'
 
     sdelka = [
         {
             'fields': {
-                "TITLE": app_from_site['title'],
-                "SOURCE_DESCRIPTION": app_from_site['description'],
+                "TITLE": purchase['title'],
+                "SOURCE_DESCRIPTION": purchase['description'],
                 'CONTACT_ID': contact_id,
-                filter_delivery_code: app_from_site['delivery_code'],
-                filter_delivery_date: app_from_site['delivery_date'],
-                filter_delivery_adress: app_from_site['delivery_adress']
+                filter_delivery_code: purchase['delivery_code'],
+                filter_delivery_date: purchase['delivery_date'],
+                filter_delivery_adress: purchase['delivery_adress']
 
             }
         }
@@ -166,18 +150,18 @@ def create_new_deal(app_from_site):
     return int(deal_id[0])
 
 
-def update_deal(app_from_site, deal_id):
-    filter_delivery_code = prefix + 'DELIVERY_CODE'
-    filter_delivery_date = prefix + 'DELIVERY_DATE'
-    filter_delivery_adress = prefix + 'DELIVERY_ADRESS'
+def update_deal(delivery_code, delivery_date, delivery_adress, deal_id):
+    # filter_delivery_code = prefix + 'DELIVERY_CODE'
+    # filter_delivery_date = prefix + 'DELIVERY_DATE'
+    # filter_delivery_adress = prefix + 'DELIVERY_ADRESS'
 
     sdelka = [
         {
             'ID': deal_id,
             'fields': {
-                filter_delivery_code: app_from_site['delivery_code'],
-                filter_delivery_date: app_from_site['delivery_date'],
-                filter_delivery_adress: app_from_site['delivery_adress']
+                filter_delivery_code: delivery_code,
+                filter_delivery_date: delivery_date,
+                filter_delivery_adress: delivery_adress
 
             }
         }
@@ -203,14 +187,16 @@ def add_product(app_from_site, deal_id):
     print(b.call('crm.deal.productrows.set', product_name))
 
 
-def main():
-
-    check_deal_id = check_delivery_code(app_from_site)
+def main(purchase):
+    check_deal_id = check_delivery_code(purchase['delivery_code'])
 
     if check_deal_id != - 1:
-        update_deal(app_from_site, check_deal_id)
+        delivery_code = purchase['delivery_code']
+        delivery_date = purchase['delivery_date']
+        delivery_adress = purchase['delivery_adress']
+        update_deal(delivery_code, delivery_date, delivery_adress, check_deal_id)
     else:
-        create_new_deal(app_from_site)
+        create_new_deal(purchase)
 
     # for i in range(273, 295, 2):
     #     try:
@@ -226,8 +212,9 @@ def main():
     # })[0]
     # # pprint(deals)
 
+
 if __name__ == '__main__':
-    main()
+    main(app_from_site)
 
 ###############################################################
 ###############################################################
