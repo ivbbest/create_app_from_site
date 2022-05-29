@@ -1,3 +1,5 @@
+# Получение заявки с сайта и создание/обновление на в Битрикс24
+
 Написать скрипт, который будет получать заявку с сайта в формате JSON и либо создавать ее либо обновлять.
 
 ## Возможные варианты:
@@ -41,3 +43,60 @@
 4. В приоритете те данные, которые пришли позже, т.е. если в первом запросе delivery_adress был “ул. Мира 222“, а в следующем идентичном запросе “ул. Мира 212“ - то в сделку попадает второй адрес (ул. Мира 212)
 5. Информация о клиенте - не изменяется, может измениться только- delivery_adress, delivery_date, products
 6. Контакт ищем по номеру телефона.
+
+
+## Использование Docker
+
+### Установка Docker.
+Установите Docker, используя инструкции с официального сайта:
+* для [Windows и MacOS](https://www.docker.com/products/docker-desktop)
+* для [Linux](https://docs.docker.com/engine/install/ubuntu/). Отдельно потребуется установть [Docker Compose](https://docs.docker.com/compose/install/)
+
+* скачайте проект к себе на компьютер 
+```bash
+    git clone https://github.com/ivbbest/create_task_bitrix24.git
+```
+* Установите Docker 
+```bash
+    https://www.docker.com/get-started
+```
+
+## Настройка виртуального окружения 
+
+* установите виртуальное окружение
+```bash
+    python -m venv .venv
+```
+* Активируйте виртуальное окружение:
+
+### Windows
+```bash
+    source .venv/Scripts/activate
+```
+
+### Linux
+```bash
+    source .venv/bin/activate
+```
+
+
+* Создайте Docker образ
+```bash
+    docker build -t test .
+```
+
+* Запустите контейнер из образа
+```bash
+    docker run --name test -it test
+```
+
+* В новом терминале выполните команду:
+```bash
+    docker exec -it test bash
+```
+* это запустит терминал внутри контейнера
+
+* Запустите  скрипт
+```bash
+    python create_app_bitrix24.py
+```
